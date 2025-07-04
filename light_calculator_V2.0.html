@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光照射エネルギー計算ツール v2.1</title>
+    <style>
+        /* CSSカスタムプロパティ (テーマ設定) */
+        :root {
+            --bg-grad-start: #667eea;
+            --bg-grad-end: #764ba2;
+            --container-bg: rgba(255, 255, 255, 0.95);
+            --card-bg: #f8fafc;
+            --card-border: #e2e8f0;
+            --card-hover-border: #667eea;
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --title-color: #4a5568;
+            --formula-bg: #edf2f7;
+            --formula-border: #667eea;
+            --note-bg: #fff3cd;
+            --note-border: #ffeaa7;
+            --note-text: #856404;
+            --result-bg-grad-start: #48bb78;
+            --result-bg-grad-end: #38a169;
+            --result-text: white;
+            --error-bg: #e53e3e;
+            --input-bg: white;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --switch-bg: #ccc;
+            --switch-knob: white;
+        }
+
+        body.dark-mode {
+            --bg-grad-start: #1e293b;
+            --bg-grad-end: #0f172a;
+            --container-bg: rgba(15, 23, 42, 0.9);
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --card-hover-border: #818cf8;
+            --text-primary: #cbd5e1;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --title-color: #e2e8f0;
+            --formula-bg: #334155;
+            --formula-border: #818cf8;
+            --note-bg: #4d4429;
+            --note-border: #927f3d;
+            --note-text: #fde68a;
+            --result-bg-grad-start: #22c55e;
+            --result-bg-grad-end: #16a34a;
+            --result-text: white;
+            --error-bg: #b91c1c;
+            --input-bg: #334155;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --switch-bg: #4f46e5;
+            --switch-knob: white;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--bg-grad-start) 0%, var(--bg-grad-end) 100%);
+            background-attachment: fixed;
+            color: var(--text-secondary);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--container-bg);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px var(--shadow-color);
+            backdrop-filter: blur(10px);
+            transition: background 0.3s ease;
+        }
+        
+        /* ヘッダーレイアウト修正 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .title-group {
+            text-align: left;
+        }
+        h1 {
+            color: var(--title-color);
+            margin: 0;
+            font-size: 2.2em;
+            background: linear-gradient(45deg, var(--bg-grad-start), var(--bg-grad-end));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .version-info {
+            color: var(--text-muted); font-size: 0.9em; font-weight: 600; margin-top: 5px;
+        }
+
+        /* ダークモードスイッチ */
+        .theme-switch-wrapper {
+            display: flex; align-items: center; flex-shrink: 0;
+        }
+        .theme-switch {
+            display: inline-block; height: 24px; position: relative; width: 44px;
+        }
+        .theme-switch input { display: none; }
+        .slider {
+            background-color: var(--switch-bg); position: absolute; cursor: pointer;
+            bottom: 0; left: 0; right: 0; top: 0; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            background-color: var(--switch-knob); content: ""; height: 18px; width: 18px;
+            position: absolute; left: 3px; bottom: 3px; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--switch-bg); }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .theme-switch-wrapper span { margin-left: 8px; color: var(--text-muted); font-size: 14px;}
+
+        .calculator-section {
+            background: var(--card-bg); border-radius: 15px; padding: 25px;
+            margin-bottom: 25px; border: 2px solid var(--card-border);
+            transition: all 0.3s ease;
+        }
+        .calculator-section:hover {
+            transform: translateY(-2px); box-shadow: 0 10px 25px var(--shadow-color);
+            border-color: var(--card-hover-border);
+        }
+
+        .section-title {
+            font-size: 1.4em; font-weight: bold; color: var(--text-primary);
+            margin-bottom: 20px; border-bottom: 2px solid var(--card-hover-border); padding-bottom: 10px;
+        }
+
+        .input-group { margin-bottom: 15px; }
+        .input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        label { font-weight: 600; color: var(--text-secondary); min-width: 120px; }
+        input[type="number"], select {
+            flex: 1; min-width: 120px; padding: 12px 15px; border: 2px solid var(--card-border);
+            border-radius: 10px; font-size: 16px; transition: all 0.3s ease;
+            background: var(--input-bg); color: var(--text-primary);
+        }
+        input[type="number"]:focus, select:focus {
+            outline: none; border-color: var(--card-hover-border);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--card-hover-border) 20%, transparent);
+        }
+        select { flex: 0 1 100px; cursor: pointer; }
+        
+        .btn {
+            background: linear-gradient(45deg, var(--bg-grad-start), var(--bg-grad-end));
+            color: white; border: none; padding: 12px 25px; border-radius: 25px;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px color-mix(in srgb, var(--bg-grad-start) 30%, transparent);
+        }
+        .btn.clear-btn {
+            background: var(--text-muted); font-size: 12px; padding: 8px 15px;
+        }
+
+        .result-area {
+            background: linear-gradient(45deg, var(--result-bg-grad-start), var(--result-bg-grad-end));
+            color: var(--result-text); padding: 20px; border-radius: 15px; margin-top: 15px;
+            font-weight: 600; text-align: center;
+            box-shadow: 0 5px 15px color-mix(in srgb, var(--result-bg-grad-start) 30%, transparent);
+            transform: scale(0.95); opacity: 0; transition: all 0.4s ease;
+        }
+        .result-area.show { transform: scale(1); opacity: 1; }
+        .result-area.error { background: var(--error-bg); }
+        .result-value { font-size: 1.2em; display: flex; align-items: center; justify-content: center; gap: 15px;}
+        .result-details { font-size: 0.9em; margin-top: 10px; opacity: 0.9; }
+
+        .copy-btn {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5);
+            color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;
+            font-size: 12px; transition: background 0.2s;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.4); }
+
+        .formula {
+            background: var(--formula-bg); padding: 15px; border-radius: 10px; margin-bottom: 15px;
+            font-family: 'Courier New', monospace; font-size: 0.9em; color: var(--text-primary);
+            border-left: 4px solid var(--formula-border); word-break: break-all;
+        }
+        
+        .note {
+            background: var(--note-bg); border: 1px solid var(--note-border); padding: 15px;
+            border-radius: 10px; margin-top: 25px; font-size: 0.9em; color: var(--note-text);
+        }
+        
+        .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 10px;}
+        
+        #attenuationGraph { margin-top: 20px; }
+        #attenuationGraph svg { width: 100%; height: auto; }
+        #attenuationGraph .axis, #attenuationGraph .label { font-family: sans-serif; font-size: 12px; fill: var(--text-muted); }
+        #attenuationGraph .grid-line { stroke: var(--card-border); stroke-dasharray: 2,2; }
+        #attenuationGraph .plot-line { stroke: var(--card-hover-border); stroke-width: 2; fill: none; }
+        #attenuationGraph .plot-point { fill: var(--card-hover-border); }
+
+        @media (max-width: 700px) {
+             header {
+                flex-direction: column-reverse;
+                align-items: center;
+            }
+            .title-group {
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .main-container { padding: 15px; }
+            h1 { font-size: 1.8em; }
+            .calculator-section { padding: 15px; }
+            .input-row { flex-direction: column; align-items: stretch; gap: 8px; }
+            label { min-width: 0; }
+            input[type="number"], select { min-width: 0; }
+            .card-footer { flex-direction: column; align-items: stretch; }
+            .btn, .btn.clear-btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <header>
+            <div class="title-group">
+                <h1>💡 光研究計算ツール</h1>
+                <div class="version-info">バージョン 2.0</div>
+            </div>
+            <div class="theme-switch-wrapper">
+                <label class="theme-switch" for="checkbox">
+                    <input type="checkbox" id="checkbox" />
+                    <div class="slider round"></div>
+                </label>
+                <span>Dark Mode</span>
+            </div>
+        </header>
+
+        <!-- 計算セクション (HTMLは変更なし) -->
+        <!-- 照射時間計算 -->
+        <div class="calculator-section">
+            <div class="section-title">⏰ 照射時間計算</div>
+            <div class="input-group">
+                <div class="input-row">
+                    <label for="targetEnergy">目標エネルギー:</label>
+                    <input type="number" id="targetEnergy" step="0.1" min="0" placeholder="例: 10">
+                    <select><option>J</option></select>
+                </div>
+                <div class="input-row">
+                    <label for="powerForTime">光出力:</label>
+                    <input type="number" id="powerForTime" step="1" min="0" placeholder="例: 100">
+                    <select id="powerForTimeUnit">
+                        <option value="mW">mW</option>
+                        <option value="W">W</option>
+                    </select>
+                </div>
+            </div>
+            <div id="timeResult"></div>
+            <div class="card-footer">
+                <button class="btn" onclick="calculateTime()">照射時間計算</button>
+                <button class="btn clear-btn" onclick="clearSection(this)">クリア</button>
+            </div>
+        </div>
+
+        <!-- 基本エネルギー計算 -->
+        <div class="calculator-section">
+            <div class="section-title">📊 基本エネルギー計算</div>
+            <div class="input-group">
+                <div class="input-row">
+                    <label for="power">光出力:</label>
+                    <input type="number" id="power" step="1" min="0" placeholder="例: 50">
+                    <select id="powerUnit">
+                        <option value="mW">mW</option>
+                        <option value="W">W</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <label for="time">照射時間:</label>
+                    <input type="number" id="time" step="0.1" min="0" placeholder="例: 120">
+                    <select><option>秒</option></select>
+                </div>
+            </div>
+            <div id="basicResult"></div>
+            <div class="card-footer">
+                <button class="btn" onclick="calculateBasicEnergy()">エネルギー計算</button>
+                <button class="btn clear-btn" onclick="clearSection(this)">クリア</button>
+            </div>
+        </div>
+        
+        <!-- 光強度計算 -->
+        <div class="calculator-section">
+            <div class="section-title">⚡ 光強度 (Irradiance) 計算</div>
+            <div class="input-group">
+                <div class="input-row">
+                    <label for="powerIntensity">光出力:</label>
+                    <input type="number" id="powerIntensity" step="1" min="0" placeholder="例: 50">
+                    <select id="powerIntensityUnit">
+                        <option value="mW">mW</option>
+                        <option value="W">W</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <label for="diameterIntensity">照射径:</label>
+                    <input type="number" id="diameterIntensity" step="0.1" min="0" placeholder="例: 5">
+                     <select id="diameterIntensityUnit">
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                    </select>
+                </div>
+            </div>
+            <div id="intensityResult"></div>
+            <div class="card-footer">
+                <button class="btn" onclick="calculateIntensity()">光強度計算</button>
+                <button class="btn" onclick="transferResult('intensityResult', 'originalIntensity', 'mW/cm²')">↓ 距離減衰へ</button>
+                <button class="btn clear-btn" onclick="clearSection(this)">クリア</button>
+            </div>
+        </div>
+
+        <!-- エネルギー密度 (Fluence) 計算 -->
+        <div class="calculator-section">
+            <div class="section-title">🎯 エネルギー密度 (Fluence) 計算</div>
+            <div class="input-group">
+                 <div class="input-row">
+                    <label for="totalEnergy">総エネルギー:</label>
+                    <input type="number" id="totalEnergy" step="0.001" min="0" placeholder="例: 6">
+                    <select><option>J</option></select>
+                </div>
+                <div class="input-row">
+                    <label for="diameter">照射径:</label>
+                    <input type="number" id="diameter" step="0.1" min="0" placeholder="例: 10">
+                     <select id="diameterUnit">
+                        <option value="mm">mm</option>
+                        <option value="cm" selected>cm</option>
+                    </select>
+                </div>
+            </div>
+            <div id="densityResult"></div>
+            <div class="card-footer">
+                <button class="btn" onclick="calculateEnergyDensity()">密度計算</button>
+                <button class="btn" onclick="transferResult('basicResult', 'totalEnergy', 'J')">↑ 基本計算から</button>
+                <button class="btn clear-btn" onclick="clearSection(this)">クリア</button>
+            </div>
+        </div>
+
+        <!-- 距離による減衰計算 -->
+        <div class="calculator-section">
+            <div class="section-title">📏 距離による光強度減衰</div>
+            <div class="formula">新しい強度 = 元の強度 × (元の距離 / 新しい距離)²</div>
+            <div class="input-group">
+                <div class="input-row">
+                    <label for="originalIntensity">元の光強度:</label>
+                    <input type="number" id="originalIntensity" step="1" min="0" placeholder="例: 100">
+                    <select><option>mW/cm²</option></select>
+                </div>
+                <div class="input-row">
+                    <label for="originalDistance">元の距離:</label>
+                    <input type="number" id="originalDistance" step="0.1" min="0" placeholder="例: 10">
+                    <select><option>cm</option></select>
+                </div>
+                <div class="input-row">
+                    <label for="newDistance">新しい距離:</label>
+                    <input type="number" id="newDistance" step="0.1" min="0" placeholder="例: 20">
+                    <select><option>cm</option></select>
+                </div>
+            </div>
+            <div id="distanceResult"></div>
+            <div id="attenuationGraph"></div>
+            <div class="card-footer">
+                <button class="btn" onclick="calculateDistanceAttenuation()">減衰計算</button>
+                <button class="btn clear-btn" onclick="clearSection(this)">クリア</button>
+            </div>
+        </div>
+
+        <!-- パルスレーザー計算 -->
+        <div class="calculator-section">
+            <div class="section-title">💥 パルスレーザー計算</div>
+            <div class="input-group">
+                <div class="input-row">
+                    <label for="pulseEnergy">パルスエネルギー:</label>
+                    <input type="number" id="pulseEnergy" min="0" placeholder="例: 10">
+                    <select id="pulseEnergyUnit">
+                        <option value="mJ">mJ</option>
+                        <option value="J">J</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <label for="pulseWidth">パルス幅:</label>
+                    <input type="number" id="pulseWidth" min="0" placeholder="例: 10">
+                    <select id="pulseWidthUnit">
+                        <option value="ns">ns</option>
+                        <option value="μs">μs</option>
+                        <option value="ms">ms</option>
+                    </select>
+                </div>
+                 <div class="input-row">
+                    <label for="pulseFreq">繰り返し周波数:</label>
+                    <input type="number" id="pulseFreq" min="0" placeholder="例: 100">
+                    <select><option>Hz</option></select>
+                </div>
+                <div class="input-row">
+                    <label for="pulseDiameter">照射径:</label>
+                    <input type="number" id="pulseDiameter" step="0.1" min="0" placeholder="例: 1">
+                     <select id="pulseDiameterUnit">
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                    </select>
+                </div>
+            </div>
+            <div id="pulseResult"></div>
+            <div class="card-footer">
+                <button class="btn" onclick="calculatePulseLaser()">パルス計算</button>
+                <button class="btn clear-btn" onclick="clearSection(this)">クリア</button>
+            </div>
+        </div>
+
+        <!-- 光子エネルギー計算 -->
+        <div class="calculator-section">
+            <div class="section-title">⚛️ 光子エネルギー計算</div>
+             <div class="formula">E = hc / λ</div>
+            <div class="input-group">
+                <div class="input-row">
+                    <label for="wavelength">波長 (λ):</label>
+                    <input type="number" id="wavelength" min="0" placeholder="例: 532">
+                    <select><option>nm</option></select>
+                </div>
+            </div>
+            <div id="photonResult"></div>
+            <div class="card-footer">
+                <button class="btn" onclick="calculatePhotonEnergy()">光子計算</button>
+                <button class="btn clear-btn" onclick="clearSection(this)">クリア</button>
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>💡 使用上の注意：</strong>
+            • 光出力は消費電力ではなく、実際に放出される光のパワーです。
+            • 距離が2倍になると、照射面積は4倍、光強度は1/4になります（逆二乗の法則）。
+            • 医療用レーザーなどでは、安全基準値を必ず確認してください。
+        </div>
+    </div>
+
+<script>
+// --- UTILITY & SETUP ---
+const h = 6.62607015e-34; // Planck's constant (J·s)
+const c = 299792458;      // Speed of light (m/s)
+const e_charge = 1.602176634e-19; // Elementary charge (C)
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ダークモードの切り替えイベントのみ（初期表示は常にライトモード）
+    const themeSwitch = document.getElementById('checkbox');
+    themeSwitch.addEventListener('change', function() {
+        if (this.checked) {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+    });
+    
+    // Enterキーで計算実行
+    document.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && document.activeElement.tagName === 'INPUT') {
+            const section = document.activeElement.closest('.calculator-section');
+            if (section) {
+                section.querySelector('.btn').click();
+            }
+        }
+    });
+});
+
+// 以降のJavaScript関数は変更ありません
+function getInputValue(id) {
+    const val = parseFloat(document.getElementById(id).value);
+    return isNaN(val) || val <= 0 ? null : val;
+}
+
+function getUnitValue(id) {
+    return document.getElementById(id).value;
+}
+
+function showResult(elementId, content, isError = false) {
+    const el = document.getElementById(elementId);
+    el.innerHTML = content;
+    el.classList.add('show');
+    if (isError) el.classList.add('error');
+    else el.classList.remove('error');
+}
+
+function showError(elementId, message = '⚠️ 正しい数値を入力してください') {
+    const content = `<div class="result-value">${message}</div>`;
+    showResult(elementId, content, true);
+}
+
+function createResultHTML(title, value, unit, details = '') {
+    const displayValue = Number.isInteger(value) ? value : value.toPrecision(4);
+    return `<div class="result-value">
+                <span>${title}: <strong>${displayValue} ${unit}</strong></span>
+                <button class="copy-btn" onclick="copyToClipboard('${value}', this)">コピー</button>
+            </div>
+            ${details ? `<div class="result-details">${details}</div>` : ''}`;
+}
+
+function copyToClipboard(text, button) {
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'コピー完了!';
+        setTimeout(() => { button.textContent = originalText; }, 1500);
+    });
+}
+
+function clearSection(button) {
+    const section = button.closest('.calculator-section');
+    section.querySelectorAll('input[type="number"]').forEach(input => input.value = '');
+    const resultArea = section.querySelector('[id$="Result"]');
+    if (resultArea) resultArea.innerHTML = '';
+    const graphArea = section.querySelector('[id$="Graph"]');
+    if (graphArea) graphArea.innerHTML = '';
+}
+
+function transferResult(sourceResultId, targetInputId, unit) {
+    const resultEl = document.getElementById(sourceResultId);
+    if (!resultEl || !resultEl.textContent) {
+        alert('先に計算を実行してください。');
+        return;
+    }
+    const strongEl = resultEl.querySelector('strong');
+    if (strongEl) {
+        const value = parseFloat(strongEl.textContent);
+        if (!isNaN(value)) {
+            document.getElementById(targetInputId).value = value;
+        }
+    }
+}
+
+// --- CALCULATION FUNCTIONS ---
+
+function calculateTime() {
+    const targetEnergy = getInputValue('targetEnergy');
+    const power = getInputValue('powerForTime');
+    const powerUnit = getUnitValue('powerForTimeUnit');
+    if (!targetEnergy || !power) return showError('timeResult');
+
+    const power_W = (powerUnit === 'W') ? power : power / 1000;
+    const time = targetEnergy / power_W;
+    
+    let timeDisplay = `${time.toPrecision(4)} 秒`;
+    if (time >= 60) timeDisplay += ` (${(time / 60).toPrecision(3)} 分)`;
+    if (time >= 3600) timeDisplay += ` (${(time / 3600).toPrecision(3)} 時間)`;
+    
+    const details = `計算式: ${targetEnergy} J ÷ ${power} ${powerUnit} = ${time.toPrecision(4)} 秒`;
+    const content = createResultHTML('必要な照射時間', time.toPrecision(4), '秒', details);
+    showResult('timeResult', content);
+}
+
+function calculateBasicEnergy() {
+    const power = getInputValue('power');
+    const time = getInputValue('time');
+    const powerUnit = getUnitValue('powerUnit');
+    if (!power || !time) return showError('basicResult');
+    
+    const power_W = (powerUnit === 'W') ? power : power / 1000;
+    const energy = power_W * time;
+
+    const details = `計算式: ${power} ${powerUnit} × ${time} 秒 = ${energy.toPrecision(4)} J`;
+    const content = createResultHTML('総エネルギー', energy.toPrecision(4), 'J', details);
+    showResult('basicResult', content);
+}
+
+function calculateIntensity() {
+    const power = getInputValue('powerIntensity');
+    const diameter = getInputValue('diameterIntensity');
+    const powerUnit = getUnitValue('powerIntensityUnit');
+    const diameterUnit = getUnitValue('diameterIntensityUnit');
+    if (!power || !diameter) return showError('intensityResult');
+
+    const power_mW = (powerUnit === 'W') ? power * 1000 : power;
+    const diameter_cm = (diameterUnit === 'mm') ? diameter / 10 : diameter;
+    
+    const radius_cm = diameter_cm / 2;
+    const area_cm2 = Math.PI * radius_cm * radius_cm;
+    const intensity_mW_cm2 = power_mW / area_cm2;
+
+    const details = `照射面積: ${area_cm2.toPrecision(3)} cm²<br>
+                     計算式: ${power} ${powerUnit} ÷ ${area_cm2.toPrecision(3)} cm²`;
+    const content = createResultHTML('光強度', intensity_mW_cm2.toPrecision(4), 'mW/cm²', details);
+    showResult('intensityResult', content);
+}
+
+function calculateEnergyDensity() {
+    const totalEnergy = getInputValue('totalEnergy');
+    const diameter = getInputValue('diameter');
+    const diameterUnit = getUnitValue('diameterUnit');
+    if (!totalEnergy || !diameter) return showError('densityResult');
+    
+    const diameter_cm = (diameterUnit === 'mm') ? diameter / 10 : diameter;
+    const radius_cm = diameter_cm / 2;
+    const area_cm2 = Math.PI * radius_cm * radius_cm;
+    const density = totalEnergy / area_cm2;
+    
+    const details = `照射面積: ${area_cm2.toPrecision(3)} cm²<br>
+                     計算式: ${totalEnergy} J ÷ ${area_cm2.toPrecision(3)} cm²`;
+    const content = createResultHTML('エネルギー密度', density.toPrecision(4), 'J/cm²', details);
+    showResult('densityResult', content);
+}
+
+function calculateDistanceAttenuation() {
+    const originalIntensity = getInputValue('originalIntensity');
+    const originalDistance = getInputValue('originalDistance');
+    const newDistance = getInputValue('newDistance');
+    if (!originalIntensity || !originalDistance || !newDistance) return showError('distanceResult');
+    
+    const newIntensity = originalIntensity * Math.pow(originalDistance / newDistance, 2);
+    const attenuationRatio = newIntensity / originalIntensity;
+    
+    const details = `減衰率: ${(attenuationRatio * 100).toFixed(1)}%<br>
+                     計算式: ${originalIntensity} × (${originalDistance}/${newDistance})²`;
+    const content = createResultHTML('新しい光強度', newIntensity.toPrecision(4), 'mW/cm²', details);
+    showResult('distanceResult', content);
+    drawAttenuationGraph(originalIntensity, originalDistance, newDistance);
+}
+
+function calculatePulseLaser() {
+    const E_pulse_val = getInputValue('pulseEnergy');
+    const E_pulse_unit = getUnitValue('pulseEnergyUnit');
+    const t_pulse_val = getInputValue('pulseWidth');
+    const t_pulse_unit = getUnitValue('pulseWidthUnit');
+    const freq = getInputValue('pulseFreq');
+    const diameter_val = getInputValue('pulseDiameter');
+    const diameter_unit = getUnitValue('pulseDiameterUnit');
+
+    if (!E_pulse_val || !t_pulse_val || !freq || !diameter_val) return showError('pulseResult');
+
+    const E_pulse_J = (E_pulse_unit === 'mJ') ? E_pulse_val / 1000 : E_pulse_val;
+    
+    let t_pulse_s;
+    if (t_pulse_unit === 'ns') t_pulse_s = t_pulse_val * 1e-9;
+    else if (t_pulse_unit === 'μs') t_pulse_s = t_pulse_val * 1e-6;
+    else t_pulse_s = t_pulse_val * 1e-3;
+
+    const diameter_cm = (diameter_unit === 'mm') ? diameter_val / 10 : diameter_val;
+    const area_cm2 = Math.PI * Math.pow(diameter_cm / 2, 2);
+
+    const P_peak = E_pulse_J / t_pulse_s; // Peak Power (W)
+    const P_avg = E_pulse_J * freq;      // Average Power (W)
+    const fluence = E_pulse_J / area_cm2; // Fluence (J/cm²)
+
+    let details = `ピーク出力 (P_peak): <strong>${P_peak.toExponential(3)} W</strong><br>`;
+    details += `平均出力 (P_avg): <strong>${P_avg.toPrecision(3)} W</strong><br>`;
+    details += `フルエンス (Fluence): <strong>${fluence.toPrecision(3)} J/cm²</strong>`;
+    
+    showResult('pulseResult', `<div class="result-details" style="text-align:left; font-size:1.1em;">${details}</div>`);
+}
+
+function calculatePhotonEnergy() {
+    const lambda_val = getInputValue('wavelength');
+    if (!lambda_val) return showError('photonResult');
+    
+    const lambda_m = lambda_val * 1e-9;
+    const E_J = (h * c) / lambda_m;
+    const E_eV = E_J / e_charge;
+
+    let details = `エネルギー (J): <strong>${E_J.toExponential(4)} J</strong><br>`;
+    details += `エネルギー (eV): <strong>${E_eV.toPrecision(4)} eV</strong>`;
+    showResult('photonResult', `<div class="result-details" style="text-align:left; font-size:1.1em;">${details}</div>`);
+}
+
+// --- GRAPHING FUNCTION ---
+function drawAttenuationGraph(I0, d0, d_new) {
+    const graphContainer = document.getElementById('attenuationGraph');
+    const width = 300, height = 200, margin = {top: 20, right: 20, bottom: 30, left: 40};
+    const w = width - margin.left - margin.right;
+    const h = height - margin.top - margin.bottom;
+
+    const max_d = Math.max(d0 * 2, d_new * 1.2);
+    const max_I = I0 * 1.2;
+    
+    const xScale = (d) => (d / max_d) * w;
+    const yScale = (I) => h - (I / max_I) * h;
+    
+    const points = [];
+    for (let i = 0; i <= 100; i++) {
+        const d_curr = (max_d / 100) * i;
+        if (d_curr > 0.01) { // ゼロ割を避ける
+            const I_curr = I0 * Math.pow(d0 / d_curr, 2);
+            if(I_curr <= max_I) points.push(`${xScale(d_curr)},${yScale(I_curr)}`);
+        }
+    }
+    const pathData = "M" + points.join(" L");
+
+    let svg = `<svg viewBox="0 0 ${width} ${height}">
+        <g transform="translate(${margin.left},${margin.top})">
+            <!-- Axes and Grid -->
+            <line x1="0" y1="${h}" x2="${w}" y2="${h}" class="axis" stroke="currentColor"></line>
+            <line x1="0" y1="0" x2="0" y2="${h}" class="axis" stroke="currentColor"></line>
+            <text x="${w/2}" y="${h + margin.bottom - 5}" text-anchor="middle" class="label">距離 (cm)</text>
+            <text transform="rotate(-90)" x="${-h/2}" y="${-margin.left+15}" text-anchor="middle" class="label">強度 (mW/cm²)</text>
+            <text x="0" y="-5" class="label">${max_I.toFixed(0)}</text>
+            <text x="${w}" y="${h+15}" text-anchor="end" class="label">${max_d.toFixed(0)}</text>
+            <line x1="0" y1="0" x2="${w}" y2="0" class="grid-line"></line>
+            <!-- Plot -->
+            <path d="${pathData}" class="plot-line"></path>
+            <circle cx="${xScale(d0)}" cy="${yScale(I0)}" r="3" class="plot-point"></circle>
+            <text x="${xScale(d0)}" y="${yScale(I0)-5}" text-anchor="middle" class="label">元</text>
+            <circle cx="${xScale(d_new)}" cy="${yScale(I0 * Math.pow(d0 / d_new, 2))}" r="3" class="plot-point"></circle>
+            <text x="${xScale(d_new)}" y="${yScale(I0 * Math.pow(d0 / d_new, 2))-5}" text-anchor="middle" class="label">新</text>
+        </g>
+    </svg>`;
+    graphContainer.innerHTML = svg;
+}
+
+</script>
+</body>
+</html>
