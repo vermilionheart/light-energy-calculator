@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>光照射エネルギー計算ツール</title>
     <style>
+        /* CSSリセットと基本的な設定 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 800px;
@@ -26,12 +31,20 @@
         h1 {
             text-align: center;
             color: #4a5568;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             font-size: 2.2em;
             background: linear-gradient(45deg, #667eea, #764ba2);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+        
+        .version-info {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+            font-weight: 600;
         }
 
         .calculator-section {
@@ -86,6 +99,7 @@
             font-size: 16px;
             transition: all 0.3s ease;
             background: white;
+            width: 100%; /* スマホでの幅を確保しやすくする */
         }
 
         input[type="number"]:focus {
@@ -153,6 +167,7 @@
             font-size: 0.9em;
             color: #4a5568;
             border-left: 4px solid #667eea;
+            word-break: break-all; /* 長い計算式がはみ出さないように改行 */
         }
 
         .note {
@@ -179,19 +194,36 @@
             margin-bottom: 15px;
         }
 
+        /* スマートフォン向けレスポンシブ対応 */
         @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .section-title {
+                font-size: 1.2em;
+            }
+            .calculator-section {
+                padding: 20px;
+            }
             .input-row {
                 flex-direction: column;
                 align-items: flex-start;
+                gap: 8px;
             }
-            
             label {
                 min-width: auto;
-                margin-bottom: 5px;
+                margin-bottom: 0;
             }
-            
             input[type="number"] {
-                width: 100%;
+                min-width: 0; /* min-widthをリセット */
+            }
+            .unit {
                 min-width: auto;
             }
         }
@@ -200,6 +232,7 @@
 <body>
     <div class="container">
         <h1>💡 光照射エネルギー計算ツール</h1>
+        <div class="version-info">バージョン 1.1</div>
         
         <!-- 照射時間計算 -->
         <div class="calculator-section">
