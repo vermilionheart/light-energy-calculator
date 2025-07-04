@@ -30,6 +30,8 @@
             --shadow-color: rgba(0, 0, 0, 0.1);
             --btn-bg: #e2e8f0;
             --btn-text: #4a5568;
+            /* 矢印の色 */
+            --arrow-color: '%23718096';
         }
 
         .dark-mode {
@@ -56,6 +58,8 @@
             --shadow-color: rgba(0, 0, 0, 0.3);
             --btn-bg: #334155;
             --btn-text: #cbd5e1;
+            /* ダークモード用の矢印の色 */
+            --arrow-color: '%2394a3b8';
         }
 
         *, *::before, *::after { box-sizing: border-box; }
@@ -211,14 +215,26 @@
             .calculator-section { padding: 15px; }
             .input-row { flex-direction: column; align-items: stretch; gap: 8px; }
             label { min-width: 0; }
-            /* --- スマホ表示の改善 --- */
-            input[type="number"], select {
-                min-width: 0;
-                padding: 8px 10px; /* 縦のpaddingを大幅に減らす */
-                font-size: 14px;   /* フォントサイズも明確に小さくする */
-            }
             .card-footer { flex-direction: column; align-items: stretch; }
             .btn, .btn.clear-btn { width: 100%; }
+
+            /* --- スマホ表示の改善 --- */
+            input[type="number"], select {
+                height: 40px;
+                padding: 8px 12px;
+                font-size: 16px;
+                line-height: 1.5; /* selectの矢印が見えるように調整 */
+            }
+            select {
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='var(--arrow-color)'/%3E%3C/svg%3E");
+                background-repeat: no-repeat;
+                background-position: right 12px center;
+                background-size: 10px 6px;
+                padding-right: 30px; /* 矢印と文字が重ならないように */
+            }
         }
     </style>
 </head>
