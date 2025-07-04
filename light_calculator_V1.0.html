@@ -98,7 +98,7 @@
         .unit {
             font-weight: 600;
             color: #718096;
-            min-width: 60px;
+            min-width: 80px;
         }
 
         .calculate-btn {
@@ -215,8 +215,8 @@
                 
                 <div class="input-row">
                     <label for="powerForTime">光出力:</label>
-                    <input type="number" id="powerForTime" step="0.001" min="0" placeholder="例: 0.1">
-                    <span class="unit">W（ワット）</span>
+                    <input type="number" id="powerForTime" step="1" min="0" placeholder="例: 100">
+                    <span class="unit">mW（ミリワット）</span>
                 </div>
             </div>
             
@@ -232,8 +232,8 @@
             <div class="input-group">
                 <div class="input-row">
                     <label for="power">光出力:</label>
-                    <input type="number" id="power" step="0.001" min="0" placeholder="例: 0.05">
-                    <span class="unit">W（ワット）</span>
+                    <input type="number" id="power" step="1" min="0" placeholder="例: 50">
+                    <span class="unit">mW（ミリワット）</span>
                 </div>
                 
                 <div class="input-row">
@@ -278,8 +278,8 @@
             <div class="input-group">
                 <div class="input-row">
                     <label for="originalIntensity">元の光強度:</label>
-                    <input type="number" id="originalIntensity" step="0.001" min="0" placeholder="例: 100">
-                    <span class="unit">W/cm²</span>
+                    <input type="number" id="originalIntensity" step="1" min="0" placeholder="例: 100">
+                    <span class="unit">mW/cm²</span>
                 </div>
                 
                 <div class="input-row">
@@ -298,17 +298,17 @@
             <button class="calculate-btn" onclick="calculateDistanceAttenuation()">距離減衰計算</button>
             <div id="distanceResult"></div>
         </div>
-
+        
         <!-- 光強度計算 -->
         <div class="calculator-section">
             <div class="section-title">⚡ 光強度計算</div>
-            <div class="formula">光強度（W/cm²） = 光出力（ワット） ÷ 照射面積（cm²）</div>
+            <div class="formula">光強度（mW/cm²） = 光出力（mW） ÷ 照射面積（cm²）</div>
             
             <div class="input-group">
                 <div class="input-row">
                     <label for="powerIntensity">光出力:</label>
-                    <input type="number" id="powerIntensity" step="0.001" min="0" placeholder="例: 0.05">
-                    <span class="unit">W（ワット）</span>
+                    <input type="number" id="powerIntensity" step="1" min="0" placeholder="例: 50">
+                    <span class="unit">mW（ミリワット）</span>
                 </div>
                 
                 <div class="input-row">
@@ -333,22 +333,23 @@
 
     <script>
         function calculateBasicEnergy() {
-            const power = parseFloat(document.getElementById('power').value);
+            const power_mW = parseFloat(document.getElementById('power').value);
             const time = parseFloat(document.getElementById('time').value);
             
-            if (isNaN(power) || isNaN(time) || power <= 0 || time <= 0) {
+            if (isNaN(power_mW) || isNaN(time) || power_mW <= 0 || time <= 0) {
                 document.getElementById('basicResult').innerHTML = 
                     '<div class="result" style="background: #e53e3e;">⚠️ 正しい数値を入力してください</div>';
                 return;
             }
             
-            const energy = power * time;
+            const power_W = power_mW / 1000;
+            const energy = power_W * time;
             
             document.getElementById('basicResult').innerHTML = 
                 `<div class="result show">
                     <div>💡 総エネルギー: <strong>${energy.toFixed(3)} ジュール</strong></div>
                     <div style="font-size: 0.9em; margin-top: 10px;">
-                        計算式: ${power} W × ${time} 秒 = ${energy.toFixed(3)} J
+                        計算式: ${power_mW} mW × ${time} 秒 = ${energy.toFixed(3)} J
                     </div>
                 </div>`;
         }
@@ -394,25 +395,26 @@
             
             document.getElementById('distanceResult').innerHTML = 
                 `<div class="result show">
-                    <div>📏 新しい光強度: <strong>${newIntensity.toFixed(3)} W/cm²</strong></div>
+                    <div>📏 新しい光強度: <strong>${newIntensity.toFixed(3)} mW/cm²</strong></div>
                     <div style="font-size: 0.9em; margin-top: 10px;">
                         減衰率: ${(attenuationRatio * 100).toFixed(1)}%<br>
-                        計算式: ${originalIntensity} × (${originalDistance}/${newDistance})² = ${newIntensity.toFixed(3)} W/cm²
+                        計算式: ${originalIntensity} × (${originalDistance}/${newDistance})² = ${newIntensity.toFixed(3)} mW/cm²
                     </div>
                 </div>`;
         }
 
         function calculateTime() {
             const targetEnergy = parseFloat(document.getElementById('targetEnergy').value);
-            const power = parseFloat(document.getElementById('powerForTime').value);
+            const power_mW = parseFloat(document.getElementById('powerForTime').value);
             
-            if (isNaN(targetEnergy) || isNaN(power) || targetEnergy <= 0 || power <= 0) {
+            if (isNaN(targetEnergy) || isNaN(power_mW) || targetEnergy <= 0 || power_mW <= 0) {
                 document.getElementById('timeResult').innerHTML = 
                     '<div class="result" style="background: #e53e3e;">⚠️ 正しい数値を入力してください</div>';
                 return;
             }
             
-            const time = targetEnergy / power;
+            const power_W = power_mW / 1000;
+            const time = targetEnergy / power_W;
             const timeMinutes = time / 60;
             const timeHours = time / 3600;
             
@@ -428,16 +430,16 @@
                 `<div class="result show">
                     <div>⏰ 必要な照射時間: <strong>${timeDisplay}</strong></div>
                     <div style="font-size: 0.9em; margin-top: 10px;">
-                        計算式: ${targetEnergy} J ÷ ${power} W = ${time.toFixed(1)} 秒
+                        計算式: ${targetEnergy} J ÷ ${power_mW} mW = ${time.toFixed(1)} 秒
                     </div>
                 </div>`;
         }
 
         function calculateIntensity() {
-            const power = parseFloat(document.getElementById('powerIntensity').value);
+            const power_mW = parseFloat(document.getElementById('powerIntensity').value);
             const diameter = parseFloat(document.getElementById('diameterIntensity').value);
             
-            if (isNaN(power) || isNaN(diameter) || power <= 0 || diameter <= 0) {
+            if (isNaN(power_mW) || isNaN(diameter) || power_mW <= 0 || diameter <= 0) {
                 document.getElementById('intensityResult').innerHTML = 
                     '<div class="result" style="background: #e53e3e;">⚠️ 正しい数値を入力してください</div>';
                 return;
@@ -445,14 +447,14 @@
             
             const radius = diameter / 2;
             const area = Math.PI * radius * radius;
-            const intensity = power / area;
+            const intensity = power_mW / area;
             
             document.getElementById('intensityResult').innerHTML = 
                 `<div class="result show">
-                    <div>⚡ 光強度: <strong>${intensity.toFixed(3)} W/cm²</strong></div>
+                    <div>⚡ 光強度: <strong>${intensity.toFixed(3)} mW/cm²</strong></div>
                     <div style="font-size: 0.9em; margin-top: 10px;">
                         照射面積: ${area.toFixed(2)} cm²<br>
-                        計算式: ${power} W ÷ ${area.toFixed(2)} cm² = ${intensity.toFixed(3)} W/cm²
+                        計算式: ${power_mW} mW ÷ ${area.toFixed(2)} cm² = ${intensity.toFixed(3)} mW/cm²
                     </div>
                 </div>`;
         }
