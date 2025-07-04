@@ -211,7 +211,12 @@
             .calculator-section { padding: 15px; }
             .input-row { flex-direction: column; align-items: stretch; gap: 8px; }
             label { min-width: 0; }
-            input[type="number"], select { min-width: 0; }
+            /* --- スマホ表示の改善 --- */
+            input[type="number"], select {
+                min-width: 0;
+                padding: 10px 12px; /* 縦のpaddingを減らす */
+                font-size: 15px;     /* フォントサイズを少し小さく */
+            }
             .card-footer { flex-direction: column; align-items: stretch; }
             .btn, .btn.clear-btn { width: 100%; }
         }
@@ -402,7 +407,7 @@
         <div class="note">
             <strong>💡 推奨ワークフロー：</strong><br>
             ① 光線ガイド先端にプローブを密着させて総パワー(W)を測定します。<br>
-            ② 測定したワットとガイドの直径を**ステップ①**に入力し、光強度（mW/cm²）を求めます。<br>
+            ② 測定したパワーとガイドの直径を**ステップ①**に入力し、光強度（mW/cm²）を求めます。<br>
             ③ その結果を**ステップ②**に転記し、目標エネルギー（J/cm²）を入力して必要な照射時間を算出します。
         </div>
     </div>
